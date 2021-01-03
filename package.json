@@ -1,6 +1,6 @@
 {
   "name": "bzr",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A wrapper for the Bazaar SCM cli",
   "main": "dist/mod.js",
   "repository": "https://github.com/tim-smart/node-bzr.git",
