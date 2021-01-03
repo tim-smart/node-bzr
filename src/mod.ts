@@ -52,7 +52,7 @@ export const branch = (bzr: TBzr, baseDir: string) => async (
   const useTmp = Path.join(baseDir, localDir) === baseDir;
   const path = useTmp ? await tmpDir() : localDir;
 
-  const resp = bzr(["branch", repo, path, ...args]);
+  const resp = await bzr(["branch", repo, path, ...args]);
 
   if (useTmp) {
     await Fs.move(path, baseDir, { overwrite: true });
