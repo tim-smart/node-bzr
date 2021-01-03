@@ -1,4 +1,7 @@
 import * as CP from "child_process";
+import * as Tmp from "tmp-promise";
+import * as Fs from "fs-extra";
+import * as Path from "path";
 
 export type TBzr = (args: string[]) => Promise<string>;
 export type TOptions = {
@@ -32,6 +35,25 @@ export const nthColumn = (column: number) => (input: string): string[] =>
     .map((line) => line.trim().split(/\s+/)[column])
     .filter((s) => !!s);
 
+const tmpDir = () => Path.join(Tmp.dirSync().name, "bzr");
+
+export const branch = (bzr: TBzr, baseDir: string) => async (
+  repo: string,
+  localDir = ".",
+  args: string[] = [],
+) => {
+  const useTmp = Path.join(baseDir, localDir) === baseDir;
+  const path = useTmp ? tmpDir() : localDir;
+
+  return bzr(["branch", repo, path, ...args]).then((r) => {
+    if (useTmp) {
+      return Fs.move(path, baseDir, { overwrite: true }).then(() => r);
+    }
+
+    return r;
+  });
+};
+
 export const tags = (bzr: TBzr) =>
   bzr(["tags", "--sort=time"]).then(nthColumn(0));
 
@@ -39,7 +61,9 @@ export default function factory(baseDir: string, opts?: Partial<TOptions>) {
   const bzr = createRaw(baseDir, opts);
 
   return {
+    baseDir: () => baseDir,
     raw: bzr,
+    branch: branch(bzr, baseDir),
     tags: () => tags(bzr),
   };
 }
