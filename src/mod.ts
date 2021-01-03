@@ -54,9 +54,13 @@ export const branch = (bzr: TBzr, baseDir: string) => async (
   });
 };
 
-export const tags = (bzr: TBzr) =>
-  bzr(["tags", "--sort=time"]).then(nthColumn(0));
+export const tags = (bzr: TBzr) => (args: string[] = ["--sort=time"]) =>
+  bzr(["tags", ...args]).then(nthColumn(0));
 
+export const ls = (bzr: TBzr) => (args: string[] = ["-R"]) =>
+  bzr(["ls", ...args]).then((files) => files.split("\n").filter((s) => !!s));
+
+export type TBzrWrapper = ReturnType<typeof factory>;
 export default function factory(baseDir: string, opts?: Partial<TOptions>) {
   const bzr = createRaw(baseDir, opts);
 
@@ -64,6 +68,7 @@ export default function factory(baseDir: string, opts?: Partial<TOptions>) {
     baseDir: () => baseDir,
     raw: bzr,
     branch: branch(bzr, baseDir),
-    tags: () => tags(bzr),
+    ls: ls(bzr),
+    tags: tags(bzr),
   };
 }
