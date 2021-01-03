@@ -35,23 +35,24 @@ export const nthColumn = (column: number) => (input: string): string[] =>
     .map((line) => line.trim().split(/\s+/)[column])
     .filter((s) => !!s);
 
-const tmpDir = () => Path.join(Tmp.dirSync().name, "bzr");
+const tmpDir = () => Tmp.dir().then((dir) => Path.join(dir.path, "bzr"));
 
 export const branch = (bzr: TBzr, baseDir: string) => async (
   repo: string,
   localDir = ".",
   args: string[] = [],
 ) => {
+  // bzr doesn't support existing directories
   const useTmp = Path.join(baseDir, localDir) === baseDir;
-  const path = useTmp ? tmpDir() : localDir;
+  const path = useTmp ? await tmpDir() : localDir;
 
-  return bzr(["branch", repo, path, ...args]).then((r) => {
-    if (useTmp) {
-      return Fs.move(path, baseDir, { overwrite: true }).then(() => r);
-    }
+  const resp = bzr(["branch", repo, path, ...args]);
 
-    return r;
-  });
+  if (useTmp) {
+    await Fs.move(path, baseDir, { overwrite: true });
+  }
+
+  return resp;
 };
 
 export const tags = (bzr: TBzr) => (args: string[] = ["--sort=time"]) =>
